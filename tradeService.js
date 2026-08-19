@@ -227,15 +227,36 @@ function getTradesByStatus(status, network) {
     return Object.values(trades).filter(t => t.status === status);
 }
 
-function getRecentTrades(limit = 50, network) {
-    const trades = updateTradesDatabase(network);
-    return Object.values(trades)
-        .sort((a, b) => {
-            const timeA = parseInt(a.lastUpdatedAt || a.closedAt || a.openedAt || a.createdAt || '0');
-            const timeB = parseInt(b.lastUpdatedAt || b.closedAt || b.openedAt || b.createdAt || '0');
-            return timeB - timeA;
-        })
-        .slice(0, limit);
+function getRecentTrades(options = {}, network) {
+    const limit = typeof options === 'number' ? options : (parseInt(options.limit, 10) || 50);
+    const offset = typeof options === 'object' && options.offset ? parseInt(options.offset, 10) : (typeof options === 'object' && options.skip ? parseInt(options.skip, 10) : 0);
+    const statusFilter = typeof options === 'object' && options.status ? options.status.toUpperCase() : null;
+
+    const net = typeof options === 'object' && options.network ? options.network : network;
+    const trades = updateTradesDatabase(net);
+    
+    let list = Object.values(trades);
+
+    if (statusFilter) {
+        list = list.filter(t => t.status === statusFilter);
+    }
+
+    const sorted = list.sort((a, b) => {
+        const timeA = parseInt(a.lastUpdatedAt || a.closedAt || a.openedAt || a.createdAt || '0', 10);
+        const timeB = parseInt(b.lastUpdatedAt || b.closedAt || b.openedAt || b.createdAt || '0', 10);
+        return timeB - timeA;
+    });
+
+    const total = sorted.length;
+    const paginated = sorted.slice(offset, offset + limit);
+
+    return {
+        total,
+        offset,
+        limit,
+        count: paginated.length,
+        trades: paginated
+    };
 }
 
 module.exports = {

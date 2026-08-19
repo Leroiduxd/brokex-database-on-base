@@ -437,6 +437,23 @@ function renderDocumentationHtml(req) {
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
+                    <span class="path">/trades</span>
+                    <span class="summary">Recent Trades Feed & Pagination</span>
+                </div>
+                <div class="endpoint-content">
+                    <p>Returns most recent trades across the entire protocol with pagination (<code>limit</code>, <code>offset</code> / <code>skip</code>) and optional status filter (<code>status=OPEN|CLOSED|CREATED|CANCELLED</code>).</p>
+                    <div class="code-container">curl "${baseUrl}/trades?limit=50&offset=0"</div>
+                    <div class="actions">
+                        <a class="btn-test" href="/trades?limit=50" target="_blank">Top 50 Trades →</a>
+                        <a class="btn-test" href="/trades?limit=50&offset=50" target="_blank">Trades 50 to 100 →</a>
+                        <a class="btn-test" href="/trades?status=OPEN" target="_blank">Open Trades Only →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
                     <span class="path">/trader/:address</span>
                     <span class="summary">Trader Portfolio & History</span>
                 </div>
@@ -721,6 +738,21 @@ const server = http.createServer(async (req, res) => {
                 trader: traderAddress,
                 totalPositions: trades.length,
                 trades
+            });
+            return;
+        }
+
+        // ROUTE 6.4: Recent & Paginated Trades
+        if (pathname === '/trades' || pathname === '/trades/recent') {
+            const limit = query.limit ? parseInt(query.limit, 10) : 50;
+            const offset = query.offset ? parseInt(query.offset, 10) : (query.skip ? parseInt(query.skip, 10) : 0);
+            const status = query.status || null;
+
+            const result = getRecentTrades({ limit, offset, status }, activeNetwork);
+            sendJson(res, 200, {
+                success: true,
+                network: activeNetwork,
+                ...result
             });
             return;
         }
