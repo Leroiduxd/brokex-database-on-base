@@ -81,14 +81,20 @@ function reconstructTrades(events) {
 
         switch (ev.event) {
             case 'TradeCreated': {
-                t.trader = ev.args.trader;
-                t.direction = ev.args.direction;
-                t.directionName = DIRECTION_MAP[ev.args.direction] || 'UNKNOWN';
-                t.orderType = ev.args.orderType;
-                t.orderTypeName = ORDER_TYPE_MAP[ev.args.orderType] || 'UNKNOWN';
-                t.leverage = ev.args.leverage;
-                t.collateral = ev.args.collateral;
-                t.targetPrice = ev.args.targetPrice;
+                if (ev.args.trader) t.trader = ev.args.trader;
+                if (ev.args.direction !== undefined) {
+                    t.direction = ev.args.direction;
+                    t.directionName = DIRECTION_MAP[ev.args.direction] || 'UNKNOWN';
+                }
+                if (ev.args.orderType !== undefined) {
+                    t.orderType = ev.args.orderType;
+                    t.orderTypeName = ORDER_TYPE_MAP[ev.args.orderType] || 'UNKNOWN';
+                }
+                if (ev.args.leverage !== undefined) t.leverage = ev.args.leverage;
+                if (ev.args.collateral !== undefined) t.collateral = ev.args.collateral;
+                if (ev.args.targetPrice !== undefined) t.targetPrice = ev.args.targetPrice;
+                if (ev.args.stopLoss !== undefined) t.currentStopLoss = ev.args.stopLoss;
+                if (ev.args.takeProfit !== undefined) t.currentTakeProfit = ev.args.takeProfit;
                 t.status = 'CREATED';
                 t.createdAt = ev.timestamp;
                 t.creationBlock = ev.blockNumber;
@@ -96,20 +102,26 @@ function reconstructTrades(events) {
             }
 
             case 'TradeOpened': {
-                t.trader = ev.args.trader;
-                t.direction = ev.args.direction;
-                t.directionName = DIRECTION_MAP[ev.args.direction] || 'UNKNOWN';
-                t.orderType = ev.args.orderType;
-                t.orderTypeName = ORDER_TYPE_MAP[ev.args.orderType] || 'UNKNOWN';
-                t.leverage = ev.args.leverage;
-                t.margin = ev.args.margin;
-                t.openInterest = ev.args.openInterest;
-                t.openTimestamp = ev.args.openTimestamp;
-                t.executionPriceOpen = ev.args.executionPrice;
-                t.oraclePriceOpen = ev.args.oraclePrice;
-                t.borrowIndexAtOpen = ev.args.borrowIndexAtOpen;
-                t.longSpread = ev.args.longSpread;
-                t.shortSpread = ev.args.shortSpread;
+                if (ev.args.trader) t.trader = ev.args.trader;
+                if (ev.args.direction !== undefined) {
+                    t.direction = ev.args.direction;
+                    t.directionName = DIRECTION_MAP[ev.args.direction] || 'UNKNOWN';
+                }
+                if (ev.args.orderType !== undefined) {
+                    t.orderType = ev.args.orderType;
+                    t.orderTypeName = ORDER_TYPE_MAP[ev.args.orderType] || 'UNKNOWN';
+                }
+                if (ev.args.leverage !== undefined) t.leverage = ev.args.leverage;
+                if (ev.args.margin !== undefined) t.margin = ev.args.margin;
+                if (ev.args.openInterest !== undefined) t.openInterest = ev.args.openInterest;
+                if (ev.args.openedAt !== undefined || ev.args.openTimestamp !== undefined) {
+                    t.openTimestamp = ev.args.openedAt || ev.args.openTimestamp;
+                }
+                if (ev.args.executionPrice !== undefined) t.executionPriceOpen = ev.args.executionPrice;
+                if (ev.args.oraclePrice !== undefined) t.oraclePriceOpen = ev.args.oraclePrice;
+                if (ev.args.borrowIndexAtOpen !== undefined) t.borrowIndexAtOpen = ev.args.borrowIndexAtOpen;
+                if (ev.args.longSpread !== undefined) t.longSpread = ev.args.longSpread;
+                if (ev.args.shortSpread !== undefined) t.shortSpread = ev.args.shortSpread;
                 t.status = 'OPEN';
                 t.openedAt = ev.timestamp;
                 t.openingBlock = ev.blockNumber;
@@ -117,8 +129,8 @@ function reconstructTrades(events) {
             }
 
             case 'StopsChanged': {
-                t.currentStopLoss = ev.args.stopLoss;
-                t.currentTakeProfit = ev.args.takeProfit;
+                if (ev.args.stopLoss !== undefined) t.currentStopLoss = ev.args.stopLoss;
+                if (ev.args.takeProfit !== undefined) t.currentTakeProfit = ev.args.takeProfit;
                 break;
             }
 
@@ -130,7 +142,7 @@ function reconstructTrades(events) {
 
             case 'TradeRecovered': {
                 t.isRecovered = true;
-                t.recoveredTo = ev.args.to;
+                if (ev.args.to) t.recoveredTo = ev.args.to;
                 break;
             }
 
@@ -138,13 +150,20 @@ function reconstructTrades(events) {
                 t.status = 'CLOSED';
                 t.closedAt = ev.timestamp;
                 t.closingBlock = ev.blockNumber;
-                t.executionPriceClose = ev.args.executionPrice;
-                t.oraclePriceClose = ev.args.oraclePrice;
-                t.finalPnl = ev.args.pnl;
-                t.closeMethod = ev.args.method;
-                t.closeMethodName = CLOSE_METHOD_MAP[ev.args.method] || 'UNKNOWN';
-                t.borrowFee = ev.args.borrowFee;
-                t.closingFee = ev.args.closingFee;
+                if (ev.args.executionPrice !== undefined) t.executionPriceClose = ev.args.executionPrice;
+                if (ev.args.oraclePrice !== undefined) t.oraclePriceClose = ev.args.oraclePrice;
+                if (ev.args.finalPnl !== undefined) t.finalPnl = ev.args.finalPnl;
+                else if (ev.args.pnl !== undefined) t.finalPnl = ev.args.pnl;
+                if (ev.args.closeMethod !== undefined) {
+                    t.closeMethod = ev.args.closeMethod;
+                    t.closeMethodName = CLOSE_METHOD_MAP[ev.args.closeMethod] || 'UNKNOWN';
+                } else if (ev.args.method !== undefined) {
+                    t.closeMethod = ev.args.method;
+                    t.closeMethodName = CLOSE_METHOD_MAP[ev.args.method] || 'UNKNOWN';
+                }
+                if (ev.args.borrowFeePaid !== undefined) t.borrowFee = ev.args.borrowFeePaid;
+                else if (ev.args.borrowFee !== undefined) t.borrowFee = ev.args.borrowFee;
+                if (ev.args.closingFee !== undefined) t.closingFee = ev.args.closingFee;
                 break;
             }
         }
