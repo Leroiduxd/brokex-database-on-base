@@ -57,12 +57,25 @@ function getNetworkConfig(targetNetwork) {
     const network = resolveNetwork(targetNetwork);
     const prefix = network === 'mainnet' ? 'MAINNET_' : 'TESTNET_';
 
-    const rpcUrl = process.env[`${prefix}RPC_URL`] || process.env.RPC_URL;
-    const coreAddress = process.env[`${prefix}BROKEX_CORE_ADDRESS`] || process.env.BROKEX_CORE_ADDRESS;
-    const lensAddress = process.env[`${prefix}BROKEX_LENS_ADDRESS`] || process.env.BROKEX_LENS_ADDRESS;
-    const bundlerUrl = process.env[`${prefix}COINBASE_BUNDLER_URL`] || process.env.COINBASE_BUNDLER_URL;
+    const rpcUrl = network === 'mainnet' 
+        ? (process.env.MAINNET_RPC_URL || null)
+        : (process.env.TESTNET_RPC_URL || process.env.RPC_URL || null);
+
+    const coreAddress = network === 'mainnet'
+        ? (process.env.MAINNET_BROKEX_CORE_ADDRESS || null)
+        : (process.env.TESTNET_BROKEX_CORE_ADDRESS || process.env.BROKEX_CORE_ADDRESS || null);
+
+    const lensAddress = network === 'mainnet'
+        ? (process.env.MAINNET_BROKEX_LENS_ADDRESS || null)
+        : (process.env.TESTNET_BROKEX_LENS_ADDRESS || process.env.BROKEX_LENS_ADDRESS || null);
+
+    const bundlerUrl = network === 'mainnet'
+        ? (process.env.MAINNET_COINBASE_BUNDLER_URL || null)
+        : (process.env.TESTNET_COINBASE_BUNDLER_URL || process.env.COINBASE_BUNDLER_URL || null);
     
-    const deploymentBlockStr = process.env[`${prefix}DEPLOYMENT_BLOCK`] || process.env.DEPLOYMENT_BLOCK || '0';
+    const deploymentBlockStr = network === 'mainnet'
+        ? (process.env.MAINNET_DEPLOYMENT_BLOCK || '0')
+        : (process.env.TESTNET_DEPLOYMENT_BLOCK || process.env.DEPLOYMENT_BLOCK || '0');
     const deploymentBlock = parseInt(deploymentBlockStr, 10);
 
     const baseDataDir = path.resolve(__dirname, 'data');
