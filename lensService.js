@@ -149,7 +149,7 @@ async function fetchPythFeedMetadata(priceFeedId) {
     }
 }
 
-function serializeInfo(info, blockNumber, pythMetadata = null, volume24h = null) {
+function serializeInfo(info, blockNumber, pythMetadata = null, volume24h = null, market24h = null) {
     return {
         syncedAt: new Date().toISOString(),
         blockNumber: Number(blockNumber),
@@ -162,6 +162,7 @@ function serializeInfo(info, blockNumber, pythMetadata = null, volume24h = null)
         priceFeedId: info.priceFeedId,
         pythMetadata: pythMetadata,
         volume24h: volume24h || null,
+        market24h: market24h || null,
         minLeverage: info.minLeverage.toString(),
         maxLeverage: info.maxLeverage.toString(),
         minTradeSize: info.minTradeSize.toString(),
@@ -195,6 +196,7 @@ function serializeInfo(info, blockNumber, pythMetadata = null, volume24h = null)
 }
 
 const { calculate24hVolume } = require('./get24hVolume');
+const { getLatestSparklineData } = require('./chart/sparklineService');
 
 async function updateProtocolInfo(provider, blockNumber = null, network) {
     const config = getNetworkConfig(network);
@@ -238,7 +240,31 @@ async function updateProtocolInfo(provider, blockNumber = null, network) {
             console.warn(`[LENS] Failed to calculate 24h volume: ${volErr.message}`);
         }
 
-        const serialized = serializeInfo(info, currentBlock, pythFeedData, volume24h);
+        // Get latest 24h market & chart prices stats
+        let market24h = null;
+        try {
+            const chartData = getLatestSparklineData();
+            if (chartData) {
+                market24h = {
+                    symbol: chartData.symbol,
+                    current_price: chartData.current_price,
+                    high_24h: chartData.high_24h,
+                    low_24h: chartData.low_24h,
+                    open_24h: chartData.open_24h,
+                    price_change_24h: chartData.price_change_24h,
+                    price_change_percent_24h: chartData.price_change_percent_24h,
+                    hour_price_diff_decimal: chartData.hour_price_diff_decimal,
+                    day_price_diff_decimal: chartData.day_price_diff_decimal,
+                    week_price_diff_decimal: chartData.week_price_diff_decimal,
+                    month_price_diff_decimal: chartData.month_price_diff_decimal,
+                    sparkline: chartData.sparkline
+                };
+            }
+        } catch (chartErr) {
+            console.warn(`[LENS] Failed to read 24h market stats: ${chartErr.message}`);
+        }
+
+        const serialized = serializeInfo(info, currentBlock, pythFeedData, volume24h, market24h);
 
         if (!fs.existsSync(config.dataDir)) {
             fs.mkdirSync(config.dataDir, { recursive: true });
