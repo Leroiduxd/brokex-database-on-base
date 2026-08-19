@@ -437,6 +437,36 @@ function renderDocumentationHtml(req) {
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
+                    <span class="path">/trader/:address</span>
+                    <span class="summary">Trader Portfolio & History</span>
+                </div>
+                <div class="endpoint-content">
+                    <p>Returns all open, closed, created and cancelled trades for a trader address, including transactions and events history.</p>
+                    <div class="code-container">curl "${baseUrl}/trader/0xca30CD2760E48af1Be32C8420e71803DA6735142"</div>
+                    <div class="actions">
+                        <a class="btn-test" href="/trader/0xca30CD2760E48af1Be32C8420e71803DA6735142" target="_blank">Execute request →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/trade/:id</span>
+                    <span class="summary">Single Trade Full Details & Audit Trail</span>
+                </div>
+                <div class="endpoint-content">
+                    <p>Returns full details for a specific trade (creationTxHash, openingTxHash, closingTxHash, all txHashes & event audit trail).</p>
+                    <div class="code-container">curl "${baseUrl}/trade/1"</div>
+                    <div class="actions">
+                        <a class="btn-test" href="/trade/1" target="_blank">Execute request →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
                     <span class="path">/protocol-info</span>
                     <span class="summary">Protocol Global Stats</span>
                 </div>
