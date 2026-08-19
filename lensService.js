@@ -149,7 +149,7 @@ async function fetchPythFeedMetadata(priceFeedId) {
     }
 }
 
-function serializeInfo(info, blockNumber, pythMetadata = null) {
+function serializeInfo(info, blockNumber, pythMetadata = null, volume24h = null) {
     return {
         syncedAt: new Date().toISOString(),
         blockNumber: Number(blockNumber),
@@ -161,6 +161,7 @@ function serializeInfo(info, blockNumber, pythMetadata = null) {
         vault: info.vault,
         priceFeedId: info.priceFeedId,
         pythMetadata: pythMetadata,
+        volume24h: volume24h || null,
         minLeverage: info.minLeverage.toString(),
         maxLeverage: info.maxLeverage.toString(),
         minTradeSize: info.minTradeSize.toString(),
@@ -193,6 +194,8 @@ function serializeInfo(info, blockNumber, pythMetadata = null) {
     };
 }
 
+const { calculate24hVolume } = require('./get24hVolume');
+
 async function updateProtocolInfo(provider, blockNumber = null, network) {
     const config = getNetworkConfig(network);
     const netKey = config.network;
@@ -221,7 +224,21 @@ async function updateProtocolInfo(provider, blockNumber = null, network) {
         const currentBlock = blockNumber || await rpcProvider.getBlockNumber();
         lastSyncedBlock[netKey] = currentBlock;
 
-        const serialized = serializeInfo(info, currentBlock, pythFeedData);
+        // Calculate 24h volume metrics for this network
+        let volume24h = null;
+        try {
+            const volReport = calculate24hVolume(netKey);
+            volume24h = {
+                totalVolumeRaw: volReport.totalVolumeRaw,
+                totalVolumeFormatted: volReport.totalVolumeFormatted,
+                opened: volReport.breakdown.opened,
+                closed: volReport.breakdown.closed
+            };
+        } catch (volErr) {
+            console.warn(`[LENS] Failed to calculate 24h volume: ${volErr.message}`);
+        }
+
+        const serialized = serializeInfo(info, currentBlock, pythFeedData, volume24h);
 
         if (!fs.existsSync(config.dataDir)) {
             fs.mkdirSync(config.dataDir, { recursive: true });
