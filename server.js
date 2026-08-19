@@ -657,8 +657,16 @@ const server = http.createServer(async (req, res) => {
                 sendJson(res, 200, { success: true, network: activeNetwork, data: info });
             } else {
                 try {
-                    const info = await updateProtocolInfo(null, activeNetwork);
-                    sendJson(res, 200, { success: true, network: activeNetwork, data: info });
+                    const info = await updateProtocolInfo(null, null, activeNetwork);
+                    if (!info) {
+                        sendJson(res, 404, { 
+                            success: false, 
+                            network: activeNetwork, 
+                            error: `No protocol info available for ${activeNetwork}. Ensure MAINNET_RPC_URL and MAINNET_BROKEX_LENS_ADDRESS are configured in .env.` 
+                        });
+                    } else {
+                        sendJson(res, 200, { success: true, network: activeNetwork, data: info });
+                    }
                 } catch (err) {
                     sendJson(res, 500, { success: false, network: activeNetwork, error: `Failed to fetch protocol info for ${activeNetwork}: ${err.message}` });
                 }
