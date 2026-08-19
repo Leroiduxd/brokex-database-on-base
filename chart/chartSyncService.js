@@ -111,4 +111,12 @@ class ChartSyncService {
   }
 }
 
-module.exports = new ChartSyncService();
+const chartSyncService = new ChartSyncService();
+
+if (require.main === module) {
+  chartSyncService.start().catch(err => {
+    console.error(`[ChartSync FATAL] ${err.message}`);
+  });
+}
+
+module.exports = chartSyncService;

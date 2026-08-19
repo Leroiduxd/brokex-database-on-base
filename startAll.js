@@ -12,11 +12,12 @@ console.log('===================================================================
 let services = [];
 
 if (requestedNetwork === 'all') {
-  // Concurrent mode: Start indexers & bots for both Testnet & Mainnet, plus 1 Shared API Server
+  // Concurrent mode: Start indexers & bots for both Testnet & Mainnet, plus Shared API Server & Chart Sync
   services = [
     { name: 'INDEXER-TESTNET', script: 'indexer.js', network: 'testnet', color: '\x1b[36m' }, // Cyan
     { name: 'INDEXER-MAINNET', script: 'indexer.js', network: 'mainnet', color: '\x1b[34m' }, // Blue
     { name: 'API SERVER    ', script: 'server.js',  network: 'testnet', color: '\x1b[32m' }, // Green (Serves both testnet & mainnet)
+    { name: 'CHART-SYNC    ', script: 'chart/chartSyncService.js', network: 'testnet', color: '\x1b[94m' }, // Light Blue
     { name: 'EXEC-TESTNET  ', script: 'executionEngine.js', network: 'testnet', color: '\x1b[35m' }, // Magenta
     { name: 'EXEC-MAINNET  ', script: 'executionEngine.js', network: 'mainnet', color: '\x1b[33m' }  // Yellow
   ];
@@ -26,6 +27,7 @@ if (requestedNetwork === 'all') {
   services = [
     { name: `INDEXER-${net.toUpperCase()}`, script: 'indexer.js', network: net, color: '\x1b[36m' },
     { name: `API SERVER-${net.toUpperCase()}`, script: 'server.js', network: net, color: '\x1b[32m' },
+    { name: 'CHART-SYNC', script: 'chart/chartSyncService.js', network: net, color: '\x1b[94m' },
     { name: `EXEC-${net.toUpperCase()}`, script: 'executionEngine.js', network: net, color: '\x1b[35m' }
   ];
 }
