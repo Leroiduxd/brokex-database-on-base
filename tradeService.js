@@ -72,12 +72,30 @@ function reconstructTrades(events) {
                 lastUpdatedAt: null,
                 creationBlock: null,
                 openingBlock: null,
-                closingBlock: null
+                closingBlock: null,
+                creationTxHash: null,
+                openingTxHash: null,
+                closingTxHash: null,
+                cancellationTxHash: null,
+                txHashes: [],
+                events: []
             };
         }
 
         const t = trades[tradeId];
         t.lastUpdatedAt = ev.timestamp;
+
+        if (ev.transactionHash && !t.txHashes.includes(ev.transactionHash)) {
+            t.txHashes.push(ev.transactionHash);
+        }
+
+        t.events.push({
+            event: ev.event,
+            blockNumber: ev.blockNumber,
+            transactionHash: ev.transactionHash,
+            timestamp: ev.timestamp,
+            args: ev.args
+        });
 
         switch (ev.event) {
             case 'TradeCreated': {
@@ -98,6 +116,7 @@ function reconstructTrades(events) {
                 t.status = 'CREATED';
                 t.createdAt = ev.timestamp;
                 t.creationBlock = ev.blockNumber;
+                t.creationTxHash = ev.transactionHash;
                 break;
             }
 
@@ -125,6 +144,7 @@ function reconstructTrades(events) {
                 t.status = 'OPEN';
                 t.openedAt = ev.timestamp;
                 t.openingBlock = ev.blockNumber;
+                t.openingTxHash = ev.transactionHash;
                 break;
             }
 
@@ -137,6 +157,7 @@ function reconstructTrades(events) {
             case 'OrderCancelled': {
                 t.status = 'CANCELLED';
                 t.isCancelled = true;
+                t.cancellationTxHash = ev.transactionHash;
                 break;
             }
 
@@ -150,6 +171,7 @@ function reconstructTrades(events) {
                 t.status = 'CLOSED';
                 t.closedAt = ev.timestamp;
                 t.closingBlock = ev.blockNumber;
+                t.closingTxHash = ev.transactionHash;
                 if (ev.args.executionPrice !== undefined) t.executionPriceClose = ev.args.executionPrice;
                 if (ev.args.oraclePrice !== undefined) t.oraclePriceClose = ev.args.oraclePrice;
                 if (ev.args.finalPnl !== undefined) t.finalPnl = ev.args.finalPnl;

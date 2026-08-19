@@ -32,7 +32,7 @@ const path = require('path');
 const { getNetworkConfig } = require('./config');
 const { getPythProof } = require('./getPythProof');
 const { getTradesByTrader } = require('./getTraderTrades');
-const { getRecentTrades, updateTradesDatabase } = require('./tradeService');
+const { getRecentTrades, updateTradesDatabase, getTradeById } = require('./tradeService');
 const { getReferralInfo } = require('./referralService');
 const { getTraderVolume } = require('./volumeService');
 const { calculateOpenTradesLiquidation } = require('./getLiquidationPrices');
@@ -651,6 +651,28 @@ const server = http.createServer(async (req, res) => {
                 trader: traderAddress,
                 totalPositions: trades.length,
                 trades
+            });
+            return;
+        }
+
+        // ROUTE 6.5: Single Trade Details
+        if (pathname.startsWith('/trade/')) {
+            const tradeId = pathname.replace('/trade/', '').trim();
+            if (!tradeId) {
+                sendJson(res, 400, { success: false, error: 'Trade ID is required.' });
+                return;
+            }
+
+            const trade = getTradeById(tradeId, activeNetwork);
+            if (!trade) {
+                sendJson(res, 404, { success: false, error: `Trade #${tradeId} not found on ${activeNetwork}.` });
+                return;
+            }
+
+            sendJson(res, 200, {
+                success: true,
+                network: activeNetwork,
+                trade
             });
             return;
         }
