@@ -1,0 +1,38 @@
+{
+  "name": "brokex-database",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node startAll.js",
+    "dev": "node startAll.js",
+    "indexer": "node indexer.js",
+    "api": "node server.js",
+    "bot": "node executionEngine.js",
+    "liq": "node getLiquidationPrices.js",
+    "avg": "node getAverageOpenPrices.js",
+    "referral": "node getReferral.js",
+    "volume": "node getTraderVolume.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:logs": "pm2 logs",
+    "paymaster": "node paymaster/testPaymaster.js",
+    "proof": "node getPythProof.js",
+    "stream": "node pythStream.js",
+    "chart": "node -e \"require('./chart/chartSyncService').start()\"",
+    "trade": "node getTrade.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "ethers": "^6.17.0",
+    "ox": "^0.11.3",
+    "permissionless": "^0.3.7",
+    "viem": "^2.55.17"
+  }
+}
