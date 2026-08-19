@@ -515,6 +515,53 @@ function renderDocumentationHtml(req) {
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
+                    <span class="path">/chart/history</span>
+                    <span class="summary">Candlestick Chart (OHLCV Candles)</span>
+                </div>
+                <div class="endpoint-content">
+                    <p>Returns historical candlesticks (<code>open, high, low, close, volume, time</code>) for TradingView and custom charts. Supports resolutions: <code>1</code> (1m), <code>5</code> (5m), <code>15</code> (15m), <code>30</code> (30m), <code>60</code> (1h), <code>240</code> (4h), <code>1440</code> (1d).</p>
+                    <div class="code-container">curl "${baseUrl}/chart/history?resolution=15&limit=200"</div>
+                    <div class="actions">
+                        <a class="btn-test" href="/chart/history?resolution=15&limit=200" target="_blank">15m Candles →</a>
+                        <a class="btn-test" href="/chart/history?resolution=60&limit=200" target="_blank">1h Candles →</a>
+                        <a class="btn-test" href="/chart/history?resolution=1&limit=100" target="_blank">1m Candles →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/chart/sparkline</span>
+                    <span class="summary">120-Point Sparkline & Multi-Period Stats</span>
+                </div>
+                <div class="endpoint-content">
+                    <p>Returns 1h, 24h, 7d and 30d percentage variations along with a 120-point sampled sparkline array for lightweight mini-charts.</p>
+                    <div class="code-container">curl "${baseUrl}/chart/sparkline"</div>
+                    <div class="actions">
+                        <a class="btn-test" href="/chart/sparkline" target="_blank">Execute request →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/chart/24h</span>
+                    <span class="summary">24h High, Low, Variations & Sparkline</span>
+                </div>
+                <div class="endpoint-content">
+                    <p>Returns 24h lowest price (<code>low_24h</code>), 24h highest price (<code>high_24h</code>), 24h open, price variations and 120-pt sparkline.</p>
+                    <div class="code-container">curl "${baseUrl}/chart/24h"</div>
+                    <div class="actions">
+                        <a class="btn-test" href="/chart/24h" target="_blank">Execute request →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
                     <span class="path">/markets</span>
                     <span class="summary">Multi-Asset Market Variations & Prices</span>
                 </div>
@@ -538,21 +585,6 @@ function renderDocumentationHtml(req) {
                     <div class="code-container">curl "${baseUrl}/markets/refresh"</div>
                     <div class="actions">
                         <a class="btn-test" href="/markets/refresh" target="_blank">Execute request →</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <span class="method get">GET</span>
-                    <span class="path">/chart/24h</span>
-                    <span class="summary">24h High, Low & Sparkline</span>
-                </div>
-                <div class="endpoint-content">
-                    <p>Returns 24h lowest price (<code>low_24h</code>), 24h highest price (<code>high_24h</code>), price variations and 120-pt sparkline.</p>
-                    <div class="code-container">curl "${baseUrl}/chart/24h"</div>
-                    <div class="actions">
-                        <a class="btn-test" href="/chart/24h" target="_blank">Execute request →</a>
                     </div>
                 </div>
             </div>
@@ -715,22 +747,44 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        // ROUTE 7: Chart History
-        if (pathname === '/chart/history') {
+        // ROUTE 7: Chart History (Candlesticks / OHLCV)
+        if (pathname === '/chart/history' || pathname === '/chart/candles') {
+            const symbol = query.symbol || TARGET_SYMBOL;
+            const resolution = query.resolution || query.res || '15';
             const to = query.to ? Number(query.to) : Math.floor(Date.now() / 1000);
-            const from = query.from ? Number(query.from) : to - (24 * 3600);
-            const resolution = query.resolution || '1';
+            const from = query.from ? Number(query.from) : null;
+            const limit = query.limit ? parseInt(query.limit, 10) : 500;
 
             try {
-                const candles = await pythService.get1mHistory(TARGET_SYMBOL, from, to);
+                let candles = await storageService.load(symbol, resolution);
+                
+                // If not found in local precomputed storage, fallback to Pyth live history
+                if (!candles || candles.length === 0) {
+                    const fallbackFrom = from || (to - (86400 * 7));
+                    candles = await pythService.get1mHistory(symbol, fallbackFrom, to);
+                }
+
+                // Filter by from / to if specified
+                if (candles && candles.length > 0) {
+                    if (from) {
+                        candles = candles.filter(c => c.time >= from && c.time <= to);
+                    } else {
+                        candles = candles.filter(c => c.time <= to);
+                    }
+
+                    if (limit && limit > 0 && candles.length > limit) {
+                        candles = candles.slice(-limit);
+                    }
+                }
+
                 sendJson(res, 200, {
                     success: true,
-                    symbol: TARGET_SYMBOL,
+                    symbol,
                     resolution,
-                    from,
-                    to,
-                    count: candles.length,
-                    candles
+                    count: candles ? candles.length : 0,
+                    from: candles && candles.length > 0 ? candles[0].time : from,
+                    to: candles && candles.length > 0 ? candles[candles.length - 1].time : to,
+                    candles: candles || []
                 });
             } catch (err) {
                 sendJson(res, 500, { success: false, error: `Failed fetching chart history: ${err.message}` });
